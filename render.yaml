@@ -1,0 +1,16 @@
+services:
+- type: web
+  name: finance-tracker-backend
+  runtime: docker
+  dockerfilePath: ./FinanceTracker/Dockerfile
+  repo: https://github.com/Zerefez/FinanceTracker-Backend
+  branch: main
+  healthCheckPath: /healthz
+  envVars:
+  - key: ASPNETCORE_ENVIRONMENT
+    value: Production
+
+databases:
+- name: finance-tracker-db
+  databaseName: financetracker
+  ipAllowList: []
