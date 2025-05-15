@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,20 +41,11 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
-builder.Configuration.AddEnvironmentVariables();
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FinanceTrackerContext>(options =>
 {
-    if (builder.Environment.IsProduction())
-    {
-        options.UseNpgsql(connectionString);
-    }
-    else
-    {
-        options.UseSqlServer(connectionString);
-    }
+    options.UseSqlServer(connectionString);
 });
 
 builder.Services.AddControllers(options =>
@@ -129,62 +119,8 @@ using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
     var context = serviceProvider.GetRequiredService<FinanceTrackerContext>();
-    
-    if (app.Environment.IsProduction())
-    {
-        try
-        {
-            // First check if the database exists, if not create it
-            context.Database.EnsureCreated();
-            
-            // Now verify if tables exist by checking each required table
-            bool tablesExist = true;
-            
-            try
-            {
-                // Try to query each of the main tables to check if they exist
-                var aspNetUsersExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"AspNetUsers\" LIMIT 1");
-                var jobsExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"Jobs\" LIMIT 1");
-                var workshiftsExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"WorkShifts\" LIMIT 1");
-                var supplementsExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"SupplementDetails\" LIMIT 1");
-            }
-            catch (Exception)
-            {
-                // If any query fails, some table doesn't exist
-                tablesExist = false;
-            }
-            
-            if (!tablesExist)
-            {
-                // If tables don't exist, recreate the database from scratch
-                context.Database.EnsureDeleted();
-                context.Database.EnsureCreated();
-            }
-        }
-        catch (Exception ex)
-        {
-            // If any unexpected error occurs, log it and try one more time
-            Console.WriteLine($"Database initialization error: {ex.Message}");
-            
-            // Last resort - just ensure the database is created
-            context.Database.EnsureCreated();
-        }
-    }
-    else
-    {
-        // In development, apply migrations as usual
-        context.Database.Migrate();
-    }
-    
-    try
-    {
-        // Only initialize with seed data after we've ensured the database is properly created
-        Dbseeder.Initialize(context);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Seed data error: {ex.Message}");
-    }
+    context.Database.Migrate();
+    Dbseeder.Initialize(context);
 }
 
 // Configure the HTTP request pipeline.
@@ -201,8 +137,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Add health check endpoint for Render
-app.MapGet("/healthz", () => "Healthy");
 
 app.Run();
