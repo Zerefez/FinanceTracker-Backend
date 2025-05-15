@@ -129,7 +129,18 @@ using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
     var context = serviceProvider.GetRequiredService<FinanceTrackerContext>();
-    context.Database.Migrate();
+    
+    if (app.Environment.IsProduction())
+    {
+        // In production, ensure database is created regardless of migrations
+        context.Database.EnsureCreated();
+    }
+    else
+    {
+        // In development, apply migrations as usual
+        context.Database.Migrate();
+    }
+    
     Dbseeder.Initialize(context);
 }
 
