@@ -132,8 +132,43 @@ using (var scope = app.Services.CreateScope())
     
     if (app.Environment.IsProduction())
     {
-        // In production, ensure database is created regardless of migrations
-        context.Database.EnsureCreated();
+        try
+        {
+            // First check if the database exists, if not create it
+            context.Database.EnsureCreated();
+            
+            // Now verify if tables exist by checking each required table
+            bool tablesExist = true;
+            
+            try
+            {
+                // Try to query each of the main tables to check if they exist
+                var aspNetUsersExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"AspNetUsers\" LIMIT 1");
+                var jobsExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"Jobs\" LIMIT 1");
+                var workshiftsExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"WorkShifts\" LIMIT 1");
+                var supplementsExist = context.Database.ExecuteSqlRaw("SELECT COUNT(*) FROM \"SupplementDetails\" LIMIT 1");
+            }
+            catch (Exception)
+            {
+                // If any query fails, some table doesn't exist
+                tablesExist = false;
+            }
+            
+            if (!tablesExist)
+            {
+                // If tables don't exist, recreate the database from scratch
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
+            }
+        }
+        catch (Exception ex)
+        {
+            // If any unexpected error occurs, log it and try one more time
+            Console.WriteLine($"Database initialization error: {ex.Message}");
+            
+            // Last resort - just ensure the database is created
+            context.Database.EnsureCreated();
+        }
     }
     else
     {
@@ -141,7 +176,15 @@ using (var scope = app.Services.CreateScope())
         context.Database.Migrate();
     }
     
-    Dbseeder.Initialize(context);
+    try
+    {
+        // Only initialize with seed data after we've ensured the database is properly created
+        Dbseeder.Initialize(context);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Seed data error: {ex.Message}");
+    }
 }
 
 // Configure the HTTP request pipeline.

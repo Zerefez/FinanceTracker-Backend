@@ -13,24 +13,21 @@ namespace FinanceTracker.DataAccess
         {
             try
             {
-                // Check if tables exist and have data
-                bool hasUsers = false;
-                bool hasWorkShifts = false;
-                bool hasJobs = false;
-                
+                // First verify tables exist by attempting to access them
                 try
                 {
-                    hasUsers = context.Users.Any();
-                    hasWorkShifts = context.WorkShifts.Any();
-                    hasJobs = context.Jobs.Any();
+                    // If we can't access Users table, exit early
+                    var userCount = context.Users.Count();
+                    if (userCount > 0)
+                    {
+                        // We already have users, no need to seed
+                        return;
+                    }
                 }
                 catch (Exception)
                 {
-                    // Tables might not exist yet
-                }
-                
-                if (hasUsers || hasWorkShifts || hasJobs)
-                {
+                    // Tables don't exist or can't be accessed correctly
+                    // Don't proceed with seeding
                     return;
                 }
 
@@ -51,19 +48,21 @@ namespace FinanceTracker.DataAccess
 
                 // Add the user directly to the context
                 context.Users.Add(user);
+                
                 try 
                 {
                     context.SaveChanges();
                 }
                 catch (Exception)
                 {
-                    // If saving fails, the table might not exist yet
+                    // If saving fails, exit
                     return;
                 }
 
                 //Get the user's ID
                 var userId = user.Id;
 
+                // Create workshifts and job
                 var workshift = new WorkShift
                 {
                     StartTime = new DateTime(2025, 4, 10, 9, 0, 0),
@@ -78,22 +77,6 @@ namespace FinanceTracker.DataAccess
                     UserId = userId,
                 };
 
-
-                var workshift2 = new WorkShift
-                {
-                    StartTime = new DateTime(2025, 5, 11, 9, 0, 0),
-                    EndTime = new DateTime(2025, 5, 11, 17, 0, 0),
-                    UserId = userId,
-                };
-
-
-                var workshift3 = new WorkShift
-                {
-                    StartTime = new DateTime(2025, 6, 11, 9, 0, 0),
-                    EndTime = new DateTime(2025, 6, 11, 17, 0, 0),
-                    UserId = userId,
-                };
-
                 var job = new Job
                 {
                     CompanyName = "Demderveddet",
@@ -101,17 +84,23 @@ namespace FinanceTracker.DataAccess
                     UserId = userId
                 };
 
-
                 context.WorkShifts.Add(workshift);
                 context.WorkShifts.Add(workshift1);
                 context.Jobs.Add(job);
 
-                context.SaveChanges();
+                try
+                {
+                    context.SaveChanges();
+                }
+                catch (Exception)
+                {
+                    // If saving fails, exit - at least we tried
+                    return;
+                }
             }
             catch (Exception)
             {
-                // Log the exception or handle it as needed
-                // Failing silently to prevent application crash
+                // General exception handler - fail silently to prevent app crash
             }
         }
     }
