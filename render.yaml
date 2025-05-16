@@ -1,0 +1,22 @@
+services:
+- type: web
+  name: finance-tracker-api
+  runtime: docker
+  repo: https://github.com/yourusername/FinanceTracker-Backend.git # Replace with your actual repository URL
+  region: oregon # Choose your preferred region
+  plan: free # Or select another plan as needed
+  branch: main # Your main branch name
+  dockerfilePath: ./FinanceTracker/Dockerfile
+  numInstances: 1
+  healthCheckPath: /health
+  envVars:
+  - key: ASPNETCORE_ENVIRONMENT
+    value: Production
+  - key: ConnectionStrings__DefaultConnection
+    sync: false # Set to 'true' if you're using a Render database service
+  - key: JWT__Secret
+    sync: false
+  - key: JWT__ValidIssuer
+    value: finance-tracker
+  - key: JWT__ValidAudience
+    value: finance-tracker-users
