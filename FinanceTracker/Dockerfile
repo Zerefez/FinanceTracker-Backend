@@ -25,6 +25,9 @@ WORKDIR /app
 COPY --from=build /app/FinanceTracker/out .
 
 ENV ASPNETCORE_URLS=http://+:10000
+ENV PORT=10000
+
+# Expose port 10000 for Render
 EXPOSE 10000
 
 ENTRYPOINT ["dotnet", "FinanceTracker.dll"]

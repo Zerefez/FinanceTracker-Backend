@@ -45,7 +45,13 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FinanceTrackerContext>(options =>
 {
-    options.UseSqlServer(connectionString);
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    });
 });
 
 builder.Services.AddControllers(options =>
@@ -115,12 +121,52 @@ builder.Services.AddAuthentication(options =>
 });
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+// Add a health check endpoint
+app.MapGet("/health", () => "OK");
+
+try
 {
-    var serviceProvider = scope.ServiceProvider;
-    var context = serviceProvider.GetRequiredService<FinanceTrackerContext>();
-    context.Database.Migrate();
-    Dbseeder.Initialize(context);
+    using (var scope = app.Services.CreateScope())
+    {
+        var serviceProvider = scope.ServiceProvider;
+        var context = serviceProvider.GetRequiredService<FinanceTrackerContext>();
+        
+        // Add retry logic for migrations
+        int retryCount = 0;
+        const int maxRetries = 5;
+        bool migrated = false;
+        
+        while (!migrated && retryCount < maxRetries)
+        {
+            try
+            {
+                context.Database.Migrate();
+                Dbseeder.Initialize(context);
+                migrated = true;
+            }
+            catch (Exception ex)
+            {
+                retryCount++;
+                Console.WriteLine($"Migration attempt {retryCount} failed: {ex.Message}");
+                
+                if (retryCount < maxRetries)
+                {
+                    // Wait before retrying
+                    Thread.Sleep(TimeSpan.FromSeconds(10 * retryCount));
+                }
+                else
+                {
+                    Console.WriteLine("Failed to migrate database after multiple attempts.");
+                    // Continue without failing the application
+                }
+            }
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"An error occurred during startup: {ex.Message}");
+    // Continue without failing the application
 }
 
 // Configure the HTTP request pipeline.
@@ -128,6 +174,16 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+else
+{
+    // For production
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Finance Tracker API v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseCors("AllowAll");

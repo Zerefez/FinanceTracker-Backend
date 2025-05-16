@@ -2,10 +2,10 @@ services:
 - type: web
   name: finance-tracker-api
   runtime: docker
-  repo: https://github.com/yourusername/FinanceTracker-Backend.git # Replace with your actual repository URL
-  region: oregon # Choose your preferred region
-  plan: free # Or select another plan as needed
-  branch: main # Your main branch name
+  repo: https://github.com/Zerefez/FinanceTracker-Backend
+  region: oregon
+  plan: free
+  branch: main
   dockerfilePath: ./FinanceTracker/Dockerfile
   numInstances: 1
   healthCheckPath: /health
@@ -13,10 +13,10 @@ services:
   - key: ASPNETCORE_ENVIRONMENT
     value: Production
   - key: ConnectionStrings__DefaultConnection
-    sync: false # Set to 'true' if you're using a Render database service
-  - key: JWT__Secret
-    sync: false
-  - key: JWT__ValidIssuer
-    value: finance-tracker
-  - key: JWT__ValidAudience
-    value: finance-tracker-users
+    value: "Server=tcp:financetracker11-server.database.windows.net,1433;Initial Catalog=FinanceTrackerDB;Persist Security Info=False;User ID=RAAA;Password=RUNRUN123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+  - key: JWT__Issuer
+    value: "MyBGList"
+  - key: JWT__Audience
+    value: "MyBGList"
+  - key: JWT__SigningKey
+    value: "Khizer8!Khizer8!Khizer8!Khizer8!Khizer8!"
