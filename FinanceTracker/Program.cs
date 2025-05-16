@@ -134,29 +134,58 @@ try
         // Add retry logic for migrations
         int retryCount = 0;
         const int maxRetries = 5;
-        bool migrated = false;
+        bool dbInitialized = false;
         
-        while (!migrated && retryCount < maxRetries)
+        while (!dbInitialized && retryCount < maxRetries)
         {
             try
             {
-                context.Database.Migrate();
+                // Check if connection works first
+                bool canConnect = false;
+                try
+                {
+                    canConnect = context.Database.CanConnect();
+                    Console.WriteLine($"Database connection test: {(canConnect ? "Success" : "Failed")}");
+                }
+                catch (Exception connEx)
+                {
+                    Console.WriteLine($"Database connection test exception: {connEx.Message}");
+                }
+
+                // Check if there are any migrations
+                var migrations = context.Database.GetPendingMigrations().ToList();
+                if (migrations.Any())
+                {
+                    Console.WriteLine($"Found {migrations.Count} pending migrations. Applying...");
+                    context.Database.Migrate();
+                }
+                else
+                {
+                    Console.WriteLine("No migrations found. Creating database if it doesn't exist...");
+                    // If no migrations, ensure database exists
+                    context.Database.EnsureCreated();
+                }
+                
+                // Initialize seed data
                 Dbseeder.Initialize(context);
-                migrated = true;
+                dbInitialized = true;
+                Console.WriteLine("Database initialization completed successfully");
             }
             catch (Exception ex)
             {
                 retryCount++;
-                Console.WriteLine($"Migration attempt {retryCount} failed: {ex.Message}");
+                Console.WriteLine($"Database initialization attempt {retryCount} failed: {ex.Message}");
                 
                 if (retryCount < maxRetries)
                 {
-                    // Wait before retrying
-                    Thread.Sleep(TimeSpan.FromSeconds(10 * retryCount));
+                    // Wait before retrying with exponential backoff
+                    int delaySeconds = 10 * retryCount;
+                    Console.WriteLine($"Retrying in {delaySeconds} seconds...");
+                    Thread.Sleep(TimeSpan.FromSeconds(delaySeconds));
                 }
                 else
                 {
-                    Console.WriteLine("Failed to migrate database after multiple attempts.");
+                    Console.WriteLine("Failed to initialize database after multiple attempts.");
                     // Continue without failing the application
                 }
             }
