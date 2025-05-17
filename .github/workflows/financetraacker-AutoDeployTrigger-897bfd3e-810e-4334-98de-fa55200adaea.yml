@@ -31,18 +31,33 @@ jobs:
           tenant-id: ${{ secrets.FINANCETRAACKER_AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.FINANCETRAACKER_AZURE_SUBSCRIPTION_ID }}
 
+      - name: Register required providers
+        run: |
+          az provider register -n Microsoft.App --wait
+          az provider register -n Microsoft.OperationalInsights --wait
+
+      - name: Create Container App Environment
+        run: |
+          az containerapp env create \
+            --name financetraacker-env \
+            --resource-group financetracker \
+            --location westus2 \
+            --logs-workspace-id ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
+
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ${{ github.workspace }}/FinanceTracker
-          _dockerfilePathKey_: _dockerfilePath_
+          dockerfilePath: Dockerfile
           registryUrl: docker.io
           registryUsername: ${{ secrets.FINANCETRAACKER_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.FINANCETRAACKER_REGISTRY_PASSWORD }}
           containerAppName: financetraacker
           resourceGroup: financetracker
+          containerAppEnvironment: financetraacker-env
           imageToBuild: RAAA/financetraacker:${{ github.sha }}
-          _buildArgumentsKey_: |
-            _buildArgumentsValues_
+          targetPort: 8080
+          ingress: external
+          location: westus2
 
 
