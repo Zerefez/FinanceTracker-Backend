@@ -5,8 +5,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
-
 
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
@@ -24,10 +22,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/FinanceTracker/out .
 
-ENV ASPNETCORE_URLS=http://+:10000
-ENV PORT=10000
-
-# Expose port 10000 for Render
-EXPOSE 10000
+# Let the PORT environment variable be set by the hosting platform
+ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
 
 ENTRYPOINT ["dotnet", "FinanceTracker.dll"]

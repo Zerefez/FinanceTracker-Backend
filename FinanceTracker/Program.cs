@@ -1,6 +1,7 @@
 using FinanceTracker.DataAccess;
 using FinanceTracker.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -123,6 +124,16 @@ builder.Services.AddAuthentication(options =>
                 builder.Configuration["JWT:SigningKey"]))
     };
 });
+
+// Configure Data Protection
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/DataProtection-Keys"))
+    .SetApplicationName("FinanceTracker");
+
+// Configure port binding
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://+:{port}");
+
 var app = builder.Build();
 
 // Add a health check endpoint
