@@ -17,17 +17,6 @@ public class FinanceTrackerContext : IdentityDbContext<FinanceUser>
 
     public DbSet<SupplementDetails> SupplementDetails { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
 
-        // Configure decimal properties with appropriate precision and scale
-        modelBuilder.Entity<Job>()
-            .Property(j => j.HourlyRate)
-            .HasColumnType("decimal(18,2)");
 
-        modelBuilder.Entity<SupplementDetails>()
-            .Property(s => s.Amount)
-            .HasColumnType("decimal(18,2)");
-    }
 }
