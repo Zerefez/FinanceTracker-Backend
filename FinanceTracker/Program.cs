@@ -42,7 +42,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<FinanceTrackerContext>(options =>
 {
@@ -88,7 +88,7 @@ builder.Services.AddIdentity<FinanceUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<FinanceTrackerContext>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", builder =>
+    options.AddPolicy("AllowAll", builder =>
     {
         builder.WithOrigins(
             "https://financetracker11.netlify.app",
@@ -230,7 +230,7 @@ else
     });
 }
 
-app.UseCors("AllowFrontend");
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

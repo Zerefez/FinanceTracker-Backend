@@ -38,5 +38,8 @@ npm-debug.log
 # Environment files
 *.env
 .env*
+# Include base appsettings and Production, exclude Development and other environment-specific files
+appsettings.Development.json
 appsettings.*.json
-!appsettings.json 
+!appsettings.json
+!appsettings.Production.json 
