@@ -31,11 +31,6 @@ jobs:
           tenant-id: ${{ secrets.FINANCETRAACKER_AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.FINANCETRAACKER_AZURE_SUBSCRIPTION_ID }}
 
-      - name: Register required providers
-        run: |
-          az provider register -n Microsoft.App --wait
-          az provider register -n Microsoft.OperationalInsights --wait
-
       - name: Create Container App Environment
         run: |
           az containerapp env create \
