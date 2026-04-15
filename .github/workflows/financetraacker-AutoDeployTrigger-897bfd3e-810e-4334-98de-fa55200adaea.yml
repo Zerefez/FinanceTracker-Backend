@@ -36,7 +36,7 @@ jobs:
           az containerapp env create \
             --name financetraacker-env \
             --resource-group financetracker \
-            --location northeurope
+            --location westus2
 
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
@@ -52,6 +52,6 @@ jobs:
           imageToBuild: zerefez/financetraacker:${{ github.sha }}
           targetPort: 8080
           ingress: external
-          location: northeurope
+          location: westus2
 
 
