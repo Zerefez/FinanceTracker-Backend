@@ -49,7 +49,7 @@ jobs:
           containerAppName: financetraacker
           resourceGroup: financetracker
           containerAppEnvironment: financetraacker-env
-          imageToBuild: zerefez/financetraacker:${{ github.sha }}
+          imageToBuild: RAAA/financetraacker:${{ github.sha }}
           targetPort: 8080
           ingress: external
           location: westus2
