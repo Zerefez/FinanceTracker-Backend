@@ -86,17 +86,18 @@ builder.Services.AddIdentity<FinanceUser, IdentityRole>(options =>
         options.Password.RequiredLength = 8;
     })
     .AddEntityFrameworkStores<FinanceTrackerContext>();
+var corsOrigins = builder.Configuration
+    .GetSection("AppSettings:CorsOrigins")
+    .Get<string[]>() ?? new[] { "http://localhost:5173" };
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        builder.WithOrigins(
-            "https://financetracker11.netlify.app",
-            "http://localhost:5173"  // for local development
-        )
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
+        policy.WithOrigins(corsOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
