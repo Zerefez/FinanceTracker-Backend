@@ -36,8 +36,7 @@ jobs:
           az containerapp env create \
             --name financetraacker-env \
             --resource-group financetracker \
-            --location westus2 \
-            --logs-workspace-id ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
+            --location westus2
 
       - name: Build and push container image to registry
         uses: azure/container-apps-deploy-action@v2
